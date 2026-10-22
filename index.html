@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="An open-world 3D naturalist game. Explore an endless procedural island chain and catalogue real medicinal plants, fungi and wildlife." />
+    <meta name="theme-color" content="#1d2a1f" />
+    <title>Materia Medica</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 58C32 40 30 26 18 12c18 4 26 18 14 46z' fill='%236fa04a'/%3E%3Cpath d='M32 58c0-18 2-32 14-46-18 4-26 18-14 46z' fill='%234a8236'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="game" tabindex="0" aria-label="Game view"></canvas>
+
+    <!-- Heads-up display -->
+    <div id="hud" class="hidden">
+      <div id="compass" aria-hidden="true">
+        <div id="compass-strip"></div>
+        <div id="compass-target" class="hidden">◆</div>
+        <div class="compass-center"></div>
+      </div>
+      <div id="sense-readout" class="hidden"></div>
+
+      <div id="status">
+        <div id="clock">☀ 08:00</div>
+        <div id="objective"><span>Materia Medica</span> <b id="journal-count">0 / 15</b></div>
+        <div id="biome-name"></div>
+        <div id="badges"></div>
+      </div>
+
+      <canvas id="minimap" width="180" height="180" aria-hidden="true"></canvas>
+
+      <div id="crosshair" aria-hidden="true"></div>
+
+      <div id="prompt" class="hidden" role="status">
+        <svg viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="18" cy="18" r="15" class="ring-bg" />
+          <circle cx="18" cy="18" r="15" id="prompt-ring-fill" class="ring-fill" />
+        </svg>
+        <span id="prompt-text"></span>
+      </div>
+
+      <div id="stamina" class="hidden" aria-hidden="true"><div id="stamina-fill"></div></div>
+      <div id="toasts" aria-live="polite"></div>
+      <div id="key-hints" aria-hidden="true">
+        <span><kbd>J</kbd> Journal</span><span><kbd>Q</kbd> Sense</span><span><kbd>H</kbd> Help</span><span><kbd>Esc</kbd> Pause</span>
+      </div>
+    </div>
+
+    <!-- Touch controls -->
+    <div id="touch-ui" class="hidden">
+      <div id="touch-stick"><div id="touch-knob"></div></div>
+      <div class="touch-buttons">
+        <button id="touch-interact" class="big">E</button>
+        <button id="touch-jump">Jump</button>
+        <button id="touch-sprint">Run</button>
+        <button id="touch-sneak">Sneak</button>
+        <button id="touch-sense">Sense</button>
+      </div>
+      <div class="touch-top">
+        <button id="touch-journal">Journal</button>
+        <button id="touch-pause">❚❚</button>
+      </div>
+    </div>
+
+    <!-- Title screen -->
+    <section id="title-screen" class="screen">
+      <div class="card title-card">
+        <p class="eyebrow">An open-world field expedition</p>
+        <h1>Materia Medica</h1>
+        <p class="lede">
+          Explore an endless chain of wild islands — beaches, wetlands, woods and cloud-wrapped peaks —
+          and record the plants, fungi and animals behind some of medicine's greatest discoveries.
+        </p>
+        <ul class="facts">
+          <li><b>No timers, no enemies.</b> Go at your own pace.</li>
+          <li><b>15 real species</b>, from foxglove to fireflies.</li>
+          <li><b>Progress saves</b> automatically in this browser.</li>
+        </ul>
+        <div class="actions">
+          <button id="btn-continue" class="primary hidden">Continue expedition</button>
+          <button id="btn-new" class="primary">Begin new expedition</button>
+          <button id="btn-title-settings">Settings</button>
+          <button id="btn-title-help">Controls</button>
+        </div>
+        <p class="seed-line">World seed: <code id="seed-label">—</code></p>
+      </div>
+    </section>
+
+    <!-- Pause menu -->
+    <section id="pause-menu" class="screen hidden">
+      <div class="card small">
+        <h2>Paused</h2>
+        <div class="actions column">
+          <button id="btn-resume" class="primary">Resume</button>
+          <button id="btn-pause-journal">Field journal</button>
+          <button id="btn-pause-settings">Settings</button>
+          <button id="btn-pause-help">Controls</button>
+          <button id="btn-pause-title">Save &amp; return to title</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Field journal -->
+    <section id="journal" class="panel hidden" aria-label="Field journal">
+      <header>
+        <div>
+          <h2>Field Journal</h2>
+          <p id="journal-progress"></p>
+        </div>
+        <button data-close class="close" aria-label="Close journal">Close <kbd>J</kbd></button>
+      </header>
+      <div class="journal-body">
+        <nav id="journal-list"></nav>
+        <article id="journal-page"></article>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="panel narrow hidden" aria-label="Settings">
+      <header>
+        <h2>Settings</h2>
+        <button data-close class="close" aria-label="Close settings">Done</button>
+      </header>
+      <form id="settings-form" class="settings-grid" onsubmit="return false">
+        <label>Look sensitivity <input type="range" name="sensitivity" min="0.2" max="3" step="0.1" /><output></output></label>
+        <label class="check"><input type="checkbox" name="invertY" /> Invert vertical look</label>
+        <label>View distance <input type="range" name="renderDistance" min="2" max="5" step="1" /><output></output></label>
+        <label>Resolution <input type="range" name="resolution" min="0.5" max="1" step="0.25" /><output></output></label>
+        <label class="check"><input type="checkbox" name="shadows" /> Shadows</label>
+        <label>Day length (minutes) <input type="range" name="dayLength" min="4" max="40" step="2" /><output></output></label>
+        <label>Sound volume <input type="range" name="volume" min="0" max="1" step="0.05" /><output></output></label>
+        <label class="check"><input type="checkbox" name="minimap" /> Show minimap</label>
+        <label class="check"><input type="checkbox" name="glow" /> Glow on unrecorded specimens</label>
+        <label class="check"><input type="checkbox" name="reducedMotion" /> Reduced motion (calmer camera, less animation)</label>
+      </form>
+    </section>
+
+    <!-- Help -->
+    <section id="help" class="panel narrow hidden" aria-label="Controls">
+      <header>
+        <h2>Controls</h2>
+        <button data-close class="close" aria-label="Close controls">Done</button>
+      </header>
+      <div class="help-body">
+        <table>
+          <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Walk (arrow keys work too)</td></tr>
+          <tr><td>Mouse</td><td>Look around (click the game first)</td></tr>
+          <tr><td>Scroll</td><td>Zoom camera</td></tr>
+          <tr><td><kbd>Shift</kbd></td><td>Run (uses stamina)</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Jump</td></tr>
+          <tr><td><kbd>C</kbd></td><td>Sneak on/off — animals let you get closer</td></tr>
+          <tr><td><kbd>E</kbd></td><td>Sample a plant · hold to observe an animal</td></tr>
+          <tr><td><kbd>Q</kbd></td><td>Sense the nearest unrecorded species</td></tr>
+          <tr><td><kbd>J</kbd></td><td>Field journal</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
+        </table>
+        <h3>How to play</h3>
+        <ol>
+          <li>Wander. Each landscape has its own species.</li>
+          <li>Unrecorded plants and fungi glow softly. Walk up and press <kbd>E</kbd>.</li>
+          <li>Animals spook easily. Walk or sneak, centre them in view and hold <kbd>E</kbd>.</li>
+          <li>Some things only happen at certain times — fireflies come out at night, swifts fly by day.</li>
+          <li>Stuck? Press <kbd>Q</kbd> to point your compass at something new nearby, or open the journal for hints.</li>
+        </ol>
+      </div>
+    </section>
+
+    <div id="loading" class="screen hidden">
+      <div class="card small">
+        <p>Growing the world…</p>
+        <div class="bar"><div id="loading-fill"></div></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
