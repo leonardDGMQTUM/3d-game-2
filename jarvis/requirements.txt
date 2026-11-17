@@ -1,0 +1,7 @@
+vosk>=0.3.45          # offline "Hi Jarvis" wake word
+faster-whisper>=1.0   # offline speech-to-text for your requests
+sounddevice>=0.4.6    # microphone + chimes
+numpy>=1.24
+edge-tts>=6.1         # calm British neural voice
+pygame>=2.5           # plays the voice
+pyttsx3>=2.90         # offline backup voice

@@ -1,0 +1,18 @@
+{
+  "_help": "Copy this file to config.json and edit. Delete any line to use the default.",
+  "name": "",
+  "city": "",
+  "units": "celsius",
+  "voice": "en-GB-RyanNeural",
+  "speech_rate": "-5%",
+  "claude_model": "sonnet",
+  "claude_tools": "WebSearch",
+  "follow_up_seconds": 8,
+  "greet_cooldown_minutes": 60,
+  "whisper_model": "base.en",
+  "mic_device": null,
+  "app_aliases": {
+    "browser": "Google Chrome",
+    "music": "Spotify"
+  }
+}
